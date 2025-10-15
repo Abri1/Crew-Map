@@ -23,9 +23,18 @@ export default function MapView({ session, onLogout }) {
   const [showMenu, setShowMenu] = useState(false)
   const [traccarConnected, setTraccarConnected] = useState(false)
 
-  // Fetch crew members
+  // Fetch crew members FIRST, then initialize Traccar
   useEffect(() => {
-    fetchCrewMembers()
+    const init = async () => {
+      // Load crew members first
+      await fetchCrewMembers()
+      console.log('✅ Crew members loaded, now initializing Traccar...')
+
+      // Then initialize Traccar
+      initTraccar()
+    }
+
+    init()
 
     // Subscribe to crew member changes
     const channel = supabase
@@ -46,17 +55,9 @@ export default function MapView({ session, onLogout }) {
 
     return () => {
       supabase.removeChannel(channel)
-    }
-  }, [session.crewId])
-
-  // Initialize Traccar connection
-  useEffect(() => {
-    initTraccar()
-
-    return () => {
       traccarClient.disconnect()
     }
-  }, [])
+  }, [session.crewId])
 
   // Subscribe to location trails
   useEffect(() => {
@@ -145,10 +146,13 @@ export default function MapView({ session, onLogout }) {
     try {
       // Use ref to get latest crew members (fixes closure bug)
       const members = crewMembersRef.current
+      console.log(`🔍 Looking for device ${position.deviceId}`)
+      console.log(`   Ref has ${members.length} members:`, members.map(m => ({ name: m.name, traccar_device_id: m.traccar_device_id })))
+
       const member = members.find(m => m.traccar_device_id === String(position.deviceId))
-      console.log(`🔍 Looking for device ${position.deviceId}, found member:`, member ? member.name : 'NOT FOUND')
+      console.log(`   Found member:`, member ? member.name : 'NOT FOUND')
+
       if (!member) {
-        console.log('   Available crew members:', members.map(m => `${m.name}(${m.traccar_device_id})`))
         return
       }
 
