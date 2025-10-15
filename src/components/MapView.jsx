@@ -361,8 +361,31 @@ export default function MapView({ session, onLogout }) {
             </div>
           </div>
 
-          <div className="text-xs text-gray-500 mb-3">
-            Traccar: {traccarConnected ? '🟢 Connected' : '🔴 Disconnected'}
+          <div className="border-b pb-3 mb-3">
+            <div className="text-sm text-gray-500 mb-2">Tracking Status</div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-600">Server:</span>
+                <span className={traccarConnected ? 'text-green-600' : 'text-red-600'}>
+                  {traccarConnected ? '🟢 Connected' : '🔴 Disconnected'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-600">Your Device ID:</span>
+                <span className="font-mono text-gray-900">{session.deviceId}</span>
+              </div>
+              {memberPositions[crewMembers.find(m => m.id === session.memberId)?.traccar_device_id] ? (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-600">Your Status:</span>
+                  <span className="text-green-600">🟢 Tracking Active</span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-600">Your Status:</span>
+                  <span className="text-orange-600">⚠️ Waiting for location...</span>
+                </div>
+              )}
+            </div>
           </div>
 
           <button
