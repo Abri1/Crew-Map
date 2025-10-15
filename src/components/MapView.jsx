@@ -10,6 +10,7 @@ const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN
 
 export default function MapView({ session, onLogout }) {
   const mapRef = useRef()
+  const crewMembersRef = useRef([])
   const [viewport, setViewport] = useState({
     latitude: -33.9249,  // Cape Town, South Africa (default view)
     longitude: 18.4241,
@@ -91,7 +92,9 @@ export default function MapView({ session, onLogout }) {
 
       if (error) throw error
       console.log('👥 Crew members from DB:', data)
-      setCrewMembers(data || [])
+      const members = data || []
+      setCrewMembers(members)
+      crewMembersRef.current = members  // Update ref for latest data
     } catch (error) {
       console.error('Error fetching crew members:', error)
     }
@@ -140,11 +143,12 @@ export default function MapView({ session, onLogout }) {
 
   const saveLocationToDatabase = async (position) => {
     try {
-      // Find member with this device ID
-      const member = crewMembers.find(m => m.traccar_device_id === String(position.deviceId))
+      // Use ref to get latest crew members (fixes closure bug)
+      const members = crewMembersRef.current
+      const member = members.find(m => m.traccar_device_id === String(position.deviceId))
       console.log(`🔍 Looking for device ${position.deviceId}, found member:`, member ? member.name : 'NOT FOUND')
       if (!member) {
-        console.log('   Available crew members:', crewMembers.map(m => `${m.name}(${m.traccar_device_id})`))
+        console.log('   Available crew members:', members.map(m => `${m.name}(${m.traccar_device_id})`))
         return
       }
 
