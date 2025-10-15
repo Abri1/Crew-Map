@@ -47,6 +47,7 @@ export default function CrewSetup({ onSessionCreated }) {
       let traccarDevice
       try {
         traccarDevice = await traccarClient.createDevice(memberName.trim(), deviceId.trim())
+        console.log('💾 Traccar device to store:', { id: traccarDevice.id, name: traccarDevice.name, uniqueId: traccarDevice.uniqueId })
       } catch (traccarError) {
         throw new Error(`Failed to create tracking device: ${traccarError.message}`)
       }
@@ -64,6 +65,7 @@ export default function CrewSetup({ onSessionCreated }) {
       if (crewError) throw crewError
 
       // Create member with traccar device ID
+      console.log('💾 Storing member with traccar_device_id:', String(traccarDevice.id))
       const { data: member, error: memberError } = await supabase
         .from('crew_members')
         .insert({
@@ -76,6 +78,7 @@ export default function CrewSetup({ onSessionCreated }) {
         .single()
 
       if (memberError) throw memberError
+      console.log('✅ Member created in DB:', member)
 
       // Store session
       const session = {
@@ -136,11 +139,13 @@ export default function CrewSetup({ onSessionCreated }) {
       let traccarDevice
       try {
         traccarDevice = await traccarClient.createDevice(memberName.trim(), deviceId.trim())
+        console.log('💾 Traccar device to store:', { id: traccarDevice.id, name: traccarDevice.name, uniqueId: traccarDevice.uniqueId })
       } catch (traccarError) {
         throw new Error(`Failed to create tracking device: ${traccarError.message}`)
       }
 
       // Create member with traccar device ID
+      console.log('💾 Storing member with traccar_device_id:', String(traccarDevice.id))
       const { data: member, error: memberError } = await supabase
         .from('crew_members')
         .insert({
@@ -153,6 +158,7 @@ export default function CrewSetup({ onSessionCreated }) {
         .single()
 
       if (memberError) throw memberError
+      console.log('✅ Member created in DB:', member)
 
       // Store session
       const session = {

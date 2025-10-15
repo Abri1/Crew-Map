@@ -41,18 +41,23 @@ class TraccarClient {
 
   async createDevice(deviceName, uniqueId) {
     try {
+      console.log('🔧 CREATE DEVICE - Input:', { deviceName, uniqueId })
+
       // First authenticate to get session
       await this.authenticate()
 
       // Check if device already exists
       const devices = await this.getDevices()
+      console.log('🔧 All Traccar devices:', devices.map(d => ({ id: d.id, name: d.name, uniqueId: d.uniqueId })))
+
       const existingDevice = devices.find(d => d.uniqueId === uniqueId)
 
       if (existingDevice) {
-        console.log('Device already exists, using existing device:', existingDevice)
+        console.log('✅ Device already exists, using existing device:', { id: existingDevice.id, name: existingDevice.name, uniqueId: existingDevice.uniqueId })
         return existingDevice
       }
 
+      console.log('🆕 Creating new Traccar device...')
       // Create new device
       const response = await fetch(`${TRACCAR_SERVER}/api/devices`, {
         method: 'POST',
@@ -76,6 +81,7 @@ class TraccarClient {
           const devicesRetry = await this.getDevices()
           const device = devicesRetry.find(d => d.uniqueId === uniqueId)
           if (device) {
+            console.log('✅ Found duplicate device:', { id: device.id, name: device.name, uniqueId: device.uniqueId })
             return device
           }
         }
@@ -84,9 +90,10 @@ class TraccarClient {
       }
 
       const device = await response.json()
+      console.log('✅ Created new device:', { id: device.id, name: device.name, uniqueId: device.uniqueId })
       return device
     } catch (error) {
-      console.error('Error creating device:', error)
+      console.error('❌ Error creating device:', error)
       throw error
     }
   }
@@ -114,6 +121,8 @@ class TraccarClient {
         ? `${TRACCAR_SERVER}/api/positions?${deviceIds.map(id => `deviceId=${id}`).join('&')}`
         : `${TRACCAR_SERVER}/api/positions`
 
+      console.log('📡 Fetching positions from:', url)
+
       const response = await fetch(url, {
         credentials: 'include',
         headers: {
@@ -125,9 +134,11 @@ class TraccarClient {
         throw new Error('Failed to fetch positions')
       }
 
-      return await response.json()
+      const positions = await response.json()
+      console.log('📡 Positions fetched:', positions.map(p => ({ deviceId: p.deviceId, lat: p.latitude, lng: p.longitude, time: p.fixTime })))
+      return positions
     } catch (error) {
-      console.error('Error fetching positions:', error)
+      console.error('❌ Error fetching positions:', error)
       return []
     }
   }
