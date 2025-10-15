@@ -90,6 +90,7 @@ export default function MapView({ session, onLogout }) {
         .eq('crew_id', session.crewId)
 
       if (error) throw error
+      console.log('👥 Crew members from DB:', data)
       setCrewMembers(data || [])
     } catch (error) {
       console.error('Error fetching crew members:', error)
@@ -103,11 +104,13 @@ export default function MapView({ session, onLogout }) {
 
       // Fetch initial positions
       const positions = await traccarClient.getPositions()
+      console.log('📍 Traccar positions received:', positions)
       updatePositions(positions)
 
       // Connect to WebSocket for real-time updates
       traccarClient.connectWebSocket((data) => {
         if (data.positions) {
+          console.log('📍 WebSocket position update:', data.positions)
           updatePositions(data.positions)
         }
       })
@@ -117,8 +120,10 @@ export default function MapView({ session, onLogout }) {
   }
 
   const updatePositions = (positions) => {
+    console.log('🔄 Updating positions, count:', positions.length)
     const posMap = {}
     positions.forEach(pos => {
+      console.log(`  Device ${pos.deviceId}:`, pos.latitude, pos.longitude)
       posMap[pos.deviceId] = {
         latitude: pos.latitude,
         longitude: pos.longitude,
@@ -137,7 +142,11 @@ export default function MapView({ session, onLogout }) {
     try {
       // Find member with this device ID
       const member = crewMembers.find(m => m.traccar_device_id === String(position.deviceId))
-      if (!member) return
+      console.log(`🔍 Looking for device ${position.deviceId}, found member:`, member ? member.name : 'NOT FOUND')
+      if (!member) {
+        console.log('   Available crew members:', crewMembers.map(m => `${m.name}(${m.traccar_device_id})`))
+        return
+      }
 
       await supabase
         .from('location_trails')
@@ -274,14 +283,16 @@ export default function MapView({ session, onLogout }) {
               latitude={position.latitude}
               longitude={position.longitude}
             >
-              <div className="relative">
+              <div className="flex flex-col items-center -translate-y-3">
+                {/* Small circle marker */}
                 <div
-                  className="w-10 h-10 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-white font-bold"
+                  className="w-7 h-7 rounded-full border-2 border-white shadow-md flex items-center justify-center text-white text-xs font-semibold"
                   style={{ backgroundColor: member.color }}
                 >
                   {member.name.charAt(0).toUpperCase()}
                 </div>
-                <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-black/75 text-white px-2 py-1 rounded text-xs whitespace-nowrap">
+                {/* Tiny name label */}
+                <div className="mt-0.5 bg-black/60 text-white px-1.5 py-0 rounded text-[10px] whitespace-nowrap">
                   {member.name}
                 </div>
               </div>
@@ -293,11 +304,10 @@ export default function MapView({ session, onLogout }) {
       {/* Recenter button */}
       <button
         onClick={handleRecenter}
-        className="absolute bottom-24 right-4 w-14 h-14 bg-white rounded-full shadow-lg flex items-center justify-center text-gray-700 hover:bg-gray-100 active:scale-95 transition-transform"
+        className="absolute bottom-20 right-4 w-12 h-12 bg-blue-500 rounded-full shadow-lg flex items-center justify-center text-white active:scale-90 transition-transform"
       >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
         </svg>
       </button>
 
