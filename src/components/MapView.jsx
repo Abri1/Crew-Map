@@ -22,6 +22,7 @@ export default function MapView({ session, onLogout }) {
   const [trails, setTrails] = useState({})
   const [showMenu, setShowMenu] = useState(false)
   const [traccarConnected, setTraccarConnected] = useState(false)
+  const [debugInfo, setDebugInfo] = useState({ lastPosition: null, lastCheck: null })
 
   // Fetch crew members FIRST, then initialize Traccar
   useEffect(() => {
@@ -148,6 +149,19 @@ export default function MapView({ session, onLogout }) {
       const members = crewMembersRef.current
       console.log(`🔍 Looking for device ${position.deviceId}`)
       console.log(`   Ref has ${members.length} members:`, members.map(m => ({ name: m.name, traccar_device_id: m.traccar_device_id })))
+
+      // Update debug info
+      setDebugInfo({
+        lastPosition: {
+          deviceId: position.deviceId,
+          time: new Date().toLocaleTimeString()
+        },
+        lastCheck: {
+          lookingFor: position.deviceId,
+          availableDevices: members.map(m => m.traccar_device_id).join(', '),
+          memberCount: members.length
+        }
+      })
 
       const member = members.find(m => m.traccar_device_id === String(position.deviceId))
       console.log(`   Found member:`, member ? member.name : 'NOT FOUND')
@@ -400,6 +414,28 @@ export default function MapView({ session, onLogout }) {
       {/* Status bar */}
       <div className="absolute bottom-4 left-4 bg-black/75 text-white px-3 py-2 rounded-lg text-sm">
         {crewMembers.length} member{crewMembers.length !== 1 ? 's' : ''} online
+      </div>
+
+      {/* Debug Panel */}
+      <div className="absolute top-20 left-4 bg-black/90 text-white px-3 py-2 rounded-lg text-xs max-w-xs">
+        <div className="font-bold mb-1">Debug Info:</div>
+        {debugInfo.lastPosition ? (
+          <>
+            <div>Last Position: Device {debugInfo.lastPosition.deviceId}</div>
+            <div>Time: {debugInfo.lastPosition.time}</div>
+          </>
+        ) : (
+          <div>No positions received yet</div>
+        )}
+        {debugInfo.lastCheck && (
+          <>
+            <div className="mt-1 border-t border-white/20 pt-1">
+              <div>Looking for: {debugInfo.lastCheck.lookingFor}</div>
+              <div>Available: {debugInfo.lastCheck.availableDevices || 'none'}</div>
+              <div>Members: {debugInfo.lastCheck.memberCount}</div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
